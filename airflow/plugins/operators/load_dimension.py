@@ -10,16 +10,16 @@ class LoadDimensionOperator(BaseOperator):
     upsert_sql = """
          START TRANSACTION;
 
-        CREATE TABLE _stage_tbl AS ({query});
+        CREATE TABLE {stage} AS ({query});
 
         DELETE FROM {dest}
-         USING _stage_tbl
-         WHERE {dest}.{primary_key} = _stage_tbl.{primary_key};
+         USING {stage}
+         WHERE {dest}.{primary_key} = {stage}.{primary_key};
 
         INSERT INTO {dest}
-        SELECT * FROM _stage_tbl;
+        SELECT * FROM {stage};
 
-        DROP TABLE _stage_tbl;
+        DROP TABLE {stage};
         
         END TRANSACTION;
     """
@@ -71,7 +71,12 @@ class LoadDimensionOperator(BaseOperator):
 
             redshift.run(LoadDimensionOperator.insert_sql.format(self.dest_tbl, self.query))
         else:
-            redshift.run(LoadDimensionOperator.upsert_sql.format(dest=self.dest_tbl, 
+
+            # handle case where the schema is provided
+            staging_table_name = "_staging_" + self.dest_tbl.replace('.', '_')
+
+            redshift.run(LoadDimensionOperator.upsert_sql.format(stage=staging_table_name,
+                                                                 dest=self.dest_tbl, 
                                                                  query=self.query,
                                                                  primary_key=self.primary_key))
 

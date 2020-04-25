@@ -64,6 +64,7 @@ load_songplays_table = LoadFactOperator(
     dag=dag,
     conn_id="redshift",
     dest_tbl='public.songplays',
+    primary_key='playid',
     query=SqlQueries.songplay_table_insert,
 )
 

@@ -41,4 +41,4 @@ class DataQualityOperator(BaseOperator):
             res = redshift.get_first(query)[0]
 
             if res == self.failure_value:
-                raise ValueError(f"failed query {query}, expectation {self.failure_value}")
+                raise ValueError(f"failed query {query}, failure {self.failure_value}")
