@@ -1,6 +1,7 @@
 [connection-aws-credentials]: https://github.com/jazracherif/udacity-data-engineer-airflow/blob/master/docs/connection-aws-credentials.png
 [connection-redshift]: https://github.com/jazracherif/udacity-data-engineer-airflow/blob/master/docs/connection-redshift.png
-[dag]: https://github.com/jazracherif/udacity-data-engineer-airflow/blob/master/docs/dag.png
+[dag-view-graph]: https://github.com/jazracherif/udacity-data-engineer-airflow/blob/master/docs/dag-view-graph.png
+[dag-view-tree]: https://github.com/jazracherif/udacity-data-engineer-airflow/blob/master/docs/dag-view-tree.png
 [postico]: https://github.com/jazracherif/udacity-data-engineer-airflow/blob/master/docs/postico.png
 
 # Udacity Data Engineer Nanodegree - Airflow Project
@@ -53,19 +54,17 @@ Create a Redshift cluster:
 
 ## Setup Cryptographic Key
 
-As per the airflow [instruction](https://airflow.readthedocs.io/en/stable/howto/secure-connections.html)
-
-generate fernet instruction by running the following in python console:
+As per the airflow [instruction](https://airflow.readthedocs.io/en/stable/howto/secure-connections.html), generate fernet key by running the following command in a python console:
 
     from cryptography.fernet import Fernet
     fernet_key= Fernet.generate_key()
     print(fernet_key.decode()) # your fernet_key, keep it in secured place!
 
-and copy the output into `fernet_key` in file `./fernet.key`. Make sure not to commit this back to github
+Copy the output into `fernet_key` in file `./fernet.key`. Make sure not to commit this back to github
 
 ## Table Initialization
 
-Download [Postico](https://eggerapps.at/postico/) or similar Postgres Client and create a connection with the Redshift hostname, username, password, and port.
+Download [Postico](https://eggerapps.at/postico/) or similar Postgres client and create a connection with the Redshift hostname, username, password, and port.
 
 ![postico][postico]
 
@@ -103,11 +102,11 @@ Once you've entered these values, select Save.
 
 ## Running the Pipeline
 
-The DAG should appear under the name `sparkify-etl-v1`. Once enabled, it will run daily for the period 11/01/2018 to 11/30/2018. To change the schedule, go to airflow/dags/sparkify-etl.py and look for the following arguments:
-- start_date
-- end_date
+The DAG should appear under the name `sparkify-etl-v1`. Once enabled, it will run daily for the period 11/01/2018 to 11/30/2018. To change the schedule, go to `airflow/dags/sparkify-etl.py` and modify the `start_date` and `end_date` arguments.
 
-![data][dag]
+![dag view graph][dag-view-graph]
+
+![dag view tree][dag-view-tree]
 
 ## Analysis
 
@@ -118,19 +117,19 @@ we can find the top 5 power users with the following query:
 
 ~~~ sql
 WITH top_users AS (
-    SELECT user_id, COUNT(*) AS count
-    FROM songplay
-    GROUP BY user_id
-    ORDER BY cnt DESC
-    LIMIT 5
+    SELECT userid, COUNT(*) AS count
+      FROM songplays
+     GROUP BY userid
+     ORDER BY count DESC
+     LIMIT 5
 )
 SELECT users.first_name, 
        users.last_name, 
-       top_users.cnt
+       top_users.count
   FROM top_users
  INNER JOIN users
-       ON users.user_id = top_users.user_id
- ORDER BY cnt DESC
+       ON users.userid = top_users.userid
+ ORDER BY count DESC;
 ~~~~
 
 and we get:

@@ -1,41 +1,44 @@
 from airflow.hooks.postgres_hook import PostgresHook
 from airflow.models import BaseOperator
 from airflow.utils.decorators import apply_defaults
-import logging
 
 class DataQualityOperator(BaseOperator):
 
     ui_color = '#89DA59'
 
-    has_rows = """
-        SELECT count(*) 
-          FROM {}
-    """
     @apply_defaults
     def __init__(self,
                  conn_id,
-                 tables: [str],
+                 fmt: [str],
+                 query,
+                 failure_value,
                  *args, **kwargs):
-        """ Operator for checking the data quality. This currently checks that
-        each table in the list has some rows in it, raises a ValueError if not
+        """ Operator for checking the data quality. This currently runs the provided
+        query for every argument in `fmt` and raises an exception if the `failure_value` 
+        is returned. The SQL query is expected to return a single value.
 
         :param conn_id: the Postgres Connection Id to use
-        :param tables (list): List of tables to check
+        :param fmt (list): A list of format args to fill the query with, for example, 
+            several tables over which to run the same query.
+        :param query: The SQL query to run templated by the values in `fmt`
+        :param failure_value: throw exceptio if the failure value is hit 
         """
 
         super(DataQualityOperator, self).__init__(*args, **kwargs)
 
         self.conn_id = conn_id
-        self.tables = tables
+        self.fmt = fmt
+        self.query = query
+        self.failure_value = failure_value
 
     def execute(self, context):
-        self.log.info('DataQualityOperator')
+        self.log.info('Running DataQualityOperator')
 
         redshift = PostgresHook(postgres_conn_id=self.conn_id)
 
-        for table in self.tables:
-            count = redshift.get_first(DataQualityOperator.has_rows.format(table))
+        for f in self.fmt:
+            query = self.query.format(f)
+            res = redshift.get_first(query)[0]
 
-            logging.info(f"{table} has {count[0]} rows")
-            if count[0] == 0:
-                raise ValueError("Table Empty")
+            if res == self.failure_value:
+                raise ValueError(f"failed query {query}, expectation {self.failure_value}")

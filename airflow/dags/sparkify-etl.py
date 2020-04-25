@@ -20,14 +20,16 @@ default_args = {
     'start_date': datetime(2018, 11, 1),
     'end_date': datetime(2018, 11, 30),
     'email_on_retry': False,
+    'Catchup': True,
     'retries': 3,
-    'retry_delay': timedelta(seconds=1), # TODO: change to 5 minutes
+    'retry_delay': timedelta(minutes=5),
+    'depends_on_past':False
 }
 
-dag = DAG('sparkify-etl-v2',
+dag = DAG('sparkify-etl-v3',
           default_args=default_args,
           description='Load and transform data in Redshift with Airflow',
-          schedule_interval='@daily',
+          schedule_interval='@daily', # todo set to hourly
           max_active_runs=1
         )
 
@@ -61,7 +63,7 @@ load_songplays_table = LoadFactOperator(
     task_id='Load_songplays_fact_table',
     dag=dag,
     conn_id="redshift",
-    table='public.songplays',
+    dest_tbl='public.songplays',
     query=SqlQueries.songplay_table_insert,
 )
 
@@ -69,8 +71,9 @@ load_user_dimension_table = LoadDimensionOperator(
     task_id='Load_user_dim_table',
     dag=dag,
     conn_id="redshift",
-    table='public.users',
+    dest_tbl='public.users',
     mode="APPEND",
+    primary_key='userid',
     query=SqlQueries.user_table_insert,
 )
 
@@ -78,7 +81,7 @@ load_song_dimension_table = LoadDimensionOperator(
     task_id='Load_song_dim_table',
     dag=dag,
     conn_id="redshift",
-    table='public.songs',
+    dest_tbl='public.songs',
     mode="TRUNCATE",
     query=SqlQueries.song_table_insert,
 
@@ -88,7 +91,7 @@ load_artist_dimension_table = LoadDimensionOperator(
     task_id='Load_artist_dim_table',
     dag=dag,
     conn_id="redshift",
-    table='public.artists',
+    dest_tbl='public.artists',
     mode="TRUNCATE",
     query=SqlQueries.artist_table_insert,
 
@@ -98,7 +101,7 @@ load_time_dimension_table = LoadDimensionOperator(
     task_id='Load_time_dim_table',
     dag=dag,
     conn_id="redshift",
-    table='public.time',
+    dest_tbl='public.time',
     mode="TRUNCATE",
     query=SqlQueries.time_table_insert,
 
@@ -108,11 +111,13 @@ run_quality_checks = DataQualityOperator(
     task_id='Run_data_quality_checks',
     dag=dag,
     conn_id="redshift",
-    tables=["public.songplays", 
+    fmt=["public.songplays", 
             "public.songs",
             "public.users",
             "public.artists",
-            "public.time"]
+            "public.time"],
+    query="SELECT count(*) FROM {}",
+    failure_value=0
 )
 
 end_operator = DummyOperator(task_id='Stop_execution',  dag=dag)

@@ -49,8 +49,6 @@ class StageToRedshiftOperator(BaseOperator):
 
 
     def execute(self, context):
-        self.log.info('StageToRedshiftOperator')
-
         aws_hook = AwsHook(aws_conn_id=self.aws_conn_id)
         aws_credentials = aws_hook.get_credentials()
 
@@ -62,6 +60,8 @@ class StageToRedshiftOperator(BaseOperator):
         # Load the data from the rendered s3 path
         rendered_key = self.s3_key.format(**context)
         s3_path = "s3://{}/{}".format(self.s3_bucket, rendered_key)
+
+        self.log.info('Loading data from {} to Redshift table {}'.format(s3_path, self.table))
 
         formatted_sql = StageToRedshiftOperator.copy_sql.format(
             self.table,
