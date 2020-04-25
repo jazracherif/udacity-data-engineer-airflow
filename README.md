@@ -102,9 +102,9 @@ The DAG should appear under the name `sparkify-etl`. Once enabled, it will run d
 
 The DAG will run hourly, ingesting the full song dataset and an hourly set of logs templated to match the execution date. 
 
-All dimension tables, except the users table, will use the TRUNCATE mode, always deleting before being populated again, as they rely on the song data which is fully loaded. 
+All dimension tables, except the `users` table, will use the TRUNCATE mode. They are always deleted before being populated again, as they rely on the song data which is fully loaded. 
 
-The user table however is populated using the staged log data which cover only one hour. I have thus implemented an upsert stragy, first deleting records from the user table which are present in the staged data, and then inserting all the rows of the staging table. This ensure I always have the latest uptodate information about users.
+The `users` table however is populated using a subset of the log data covering only one hour. I have thus implemented an upsert stragy, first deleting records from the `users` table which are present in the staged dataset (using the userid primary key to join the two tables), and then inserting all the rows from the staged table. This ensure I always have the latest up-to-date information about users.
 
 ![dag view graph][dag-view-graph]
 
