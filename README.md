@@ -1,7 +1,7 @@
-[connection-aws-credentials]: connection-aws-credentials.png
-[connection-redshift]: connection-redshift.png
-[dag]: dag.png
-[postico]: postico.png
+[connection-aws-credentials]: https://github.com/jazracherif/udacity-data-engineer-airflow/blob/master/docs/connection-aws-credentials.png
+[connection-redshift]: https://github.com/jazracherif/udacity-data-engineer-airflow/blob/master/docs/connection-redshift.png
+[dag]: https://github.com/jazracherif/udacity-data-engineer-airflow/blob/master/docs/dag.png
+[postico]: https://github.com/jazracherif/udacity-data-engineer-airflow/blob/master/docs/postico.png
 
 # Udacity Data Engineer Nanodegree - Airflow Project
 
@@ -61,7 +61,7 @@ generate fernet instruction by running the following in python console:
     fernet_key= Fernet.generate_key()
     print(fernet_key.decode()) # your fernet_key, keep it in secured place!
 
-and copy the output into `fernet_key` in airflow.cfg
+and copy the output into `fernet_key` in file `./fernet.key`. Make sure not to commit this back to github
 
 ## Table Initialization
 
@@ -103,10 +103,63 @@ Once you've entered these values, select Save.
 
 ## Running the Pipeline
 
-The DAG should appear under the name `sparkify-etl-v1` and will run daily for the period 11/01/2018 to 11/30/2018:
+The DAG should appear under the name `sparkify-etl-v1`. Once enabled, it will run daily for the period 11/01/2018 to 11/30/2018. To change the schedule, go to airflow/dags/sparkify-etl.py and look for the following arguments:
+- start_date
+- end_date
 
 ![data][dag]
 
 ## Analysis
+
+Using Postico, We can run the following query at the end of the Pipeline for analysis.
+
+
+we can find the top 5 power users with the following query:
+
+~~~ sql
+WITH top_users AS (
+    SELECT user_id, COUNT(*) AS count
+    FROM songplay
+    GROUP BY user_id
+    ORDER BY cnt DESC
+    LIMIT 5
+)
+SELECT users.first_name, 
+       users.last_name, 
+       top_users.cnt
+  FROM top_users
+ INNER JOIN users
+       ON users.user_id = top_users.user_id
+ ORDER BY cnt DESC
+~~~~
+
+and we get:
+
+| first_name | last_name | cnt |
+| ------------- |:-------------:|:-------------:|
+| Chloe | Cuevas | 41 |
+| Tegan | Levine | 31 |
+| Kate | Harrell | 28 |
+| Lily | Koch | 20 | 
+| Aleena | Kirby | 18 |
+
+We can also look for the top 5 most popular locations where songs are played, using the following query:
+
+~~~ sql
+SELECT location, 
+       count(*) AS cnt 
+  FROM songplays
+ GROUP BY location 
+ ORDER BY cnt DESC 
+ LIMIT 5
+~~~~
+
+| location | count |
+| ------------- |:-------------:|
+| San Francisco-Oakland-Hayward, CA | 41
+| Portland-South Portland, ME | 31
+| Lansing-East Lansing, MI | 28
+| Chicago-Naperville-Elgin, IL-IN-WI | 20
+| Atlanta-Sandy Springs-Roswell, GA | 18
 
 
