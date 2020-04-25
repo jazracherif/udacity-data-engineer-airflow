@@ -16,7 +16,6 @@ class StageToRedshiftOperator(BaseOperator):
         SECRET_ACCESS_KEY '{}'
         REGION 'us-west-2'
         JSON '{}'
-        COMPUPDATE OFF
     """
 
     @apply_defaults

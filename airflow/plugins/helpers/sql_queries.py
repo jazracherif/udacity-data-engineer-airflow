@@ -20,9 +20,19 @@ class SqlQueries:
     """)
 
     user_table_insert = ("""
-        SELECT distinct userid, firstname, lastname, gender, level
+        WITH numbered_levels AS (
+      SELECT ROW_NUMBER() over (PARTITION by userid ORDER BY ts DESC) AS row_num,
+             userid,
+             firstname, 
+             lastname, 
+             gender, 
+             level
         FROM staging_events
         WHERE page='NextSong'
+    )
+    SELECT DISTINCT userid, firstname, lastname, gender, level
+      FROM numbered_levels
+     WHERE row_num = 1
     """)
 
     song_table_insert = ("""

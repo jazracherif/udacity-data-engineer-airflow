@@ -26,10 +26,10 @@ default_args = {
     'depends_on_past':False
 }
 
-dag = DAG('sparkify-etl-v3',
+dag = DAG('sparkify-etl',
           default_args=default_args,
           description='Load and transform data in Redshift with Airflow',
-          schedule_interval='@daily', # todo set to hourly
+          schedule_interval='@hourly',
           max_active_runs=1
         )
 
